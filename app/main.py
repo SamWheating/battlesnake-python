@@ -3,6 +3,15 @@ import os
 import random
 
 
+# NOTES TO SAM:
+# To run Game locally:
+#
+# sudo start_server.sh
+# python app/main.py
+# 
+# Go to http://localhost:3000
+# use local ip port 8080 (http://172.17.0.1:8080)
+
 @bottle.route('/static/<path:path>')
 def static(path):
     return bottle.static_file(path, root='static/')
@@ -37,8 +46,8 @@ def start():
 def move():
     data = bottle.request.json
 
-    y = int(data['snakes']['data'][0]['body']['data'][0]['y'])
-    x = int(data['snakes']['data'][0]['body']['data'][0]['x'])
+    y = int(data['you']['body']['data'][0]['y'])
+    x = int(data['you']['body']['data'][0]['x'])
 
     target_x = int(data['food']['data'][0]['x'])
     target_y = int(data['food']['data'][0]['y'])
@@ -87,8 +96,11 @@ def validate_move(data, direction):
     print("testing move", direction)
 
     # checking for hazards if snake is to make the chosen move.
-    x = int(data['snakes']['data'][0]['body']['data'][0]['x'])
-    y = int(data['snakes']['data'][0]['body']['data'][0]['y'])
+
+    x = int(data['you']['body']['data'][0]['x'])
+    y = int(data['you']['body']['data'][0]['y'])
+
+    # DON'T HIT WALLS
 
     if x == 0:
         if direction == 'left':
@@ -100,18 +112,19 @@ def validate_move(data, direction):
             print("tried to run out top side")
             return False
 
-    if x == int(data['width']):
+    if x == (int(data['width'])-1):
         if direction == 'right':
             print("tried to run out right side")
             return False
 
-    if y == int(data['height']):
+    if y == (int(data['height'])-1):
         if direction == 'down':
             print("tried to run out bottom side")
             return False
 
 
-    # check that move will not put snake on its own tail
+    # DON'T HIT YOUR OWN TAIL
+
     if direction == 'right':
         future_x = x + 1
         future_y = y
@@ -132,7 +145,7 @@ def validate_move(data, direction):
 
     tail = []
 
-    for segment in data['snakes']['data'][0]['body']['data'][1:-1]:
+    for segment in data['you']['body']['data'][1:-1]:
         tail.append([int(segment['x']), int(segment['y'])])
 
     print(future_pos)
@@ -142,6 +155,7 @@ def validate_move(data, direction):
         print("future pos: ", future_pos, "in tail. Dodge!")
         return False
 
+    # if there's no obstacles in da wae:
     return True
 
 

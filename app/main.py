@@ -24,26 +24,27 @@ def start():
     board_width = data['width']
     board_height = data['height']
 
-    head_url = '%s://%s/static/head.png' % (
-        bottle.request.urlparts.scheme,
-        bottle.request.urlparts.netloc
-    )
 
-    head_type = "bendr"
-    tail_type = "small_rattle"
-
-    # TODO: Do things with data
+    # Using shrek as the snek avatar for now
+    head_url = 'https://orig00.deviantart.net/04d8/f/2017/095/f/9/shrek_head_png_by_darkwoodsx-db4reoe.png'
 
     return {
         'color': '#21205E',
         'taunt': '{} ({}x{})'.format(game_id, board_width, board_height),
         'head_url': head_url,
-        'name': 'Perogie Joe'
+        'name': 'Perogie Joe',
+        "head_type": "pixel",       # For some reason these don't work.
+        "tail_type": "pixel"        # This one too
     }
 
 
 @bottle.post('/move')
 def move():
+
+    # MOVE function:
+    # Finds food and directs the snake there in an x-y search pattern
+    # validates move 3x to ensure that the snake isn't gonna hit anything
+
     data = bottle.request.json
 
     y = int(data['you']['body']['data'][0]['y'])
@@ -92,6 +93,11 @@ def move():
     }
 
 def validate_move(data, direction):
+
+    # VALIDATE MOVE:
+    # Check that the future position of the head isn't:
+    #   a) on the snake's tail.
+    #   b) outside the bounds of the game field.
 
     print("testing move", direction)
 

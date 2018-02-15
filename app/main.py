@@ -63,7 +63,6 @@ def move():
     elif x > target_x:
         direction = 'left'
 
-
     elif y < target_y:
         direction = 'down'
 
@@ -149,18 +148,42 @@ def validate_move(data, direction):
 
     future_pos = [future_x, future_y]
 
-    tail = []
+    tail = []   # this is the list of points to not enter
+    heads = []  # for avoiding head areas
 
     for snake in data['snakes']['data']:
         for segment in snake['body']['data'][:-1]:
             tail.append([int(segment['x']), int(segment['y'])])
 
-    print(future_pos)
+    
+    for snake in data['snakes']['data'][:]:
+        heads.append([int(snake['body']['data'][0]['x']), int(snake['body']['data'][0]['y'])])
+    
+    y = int(data['you']['body']['data'][0]['y'])
+    x = int(data['you']['body']['data'][0]['x'])
+
+    if [x,y] in heads:
+        heads.remove([x,y])
+
+#    print(future_pos)
+#    print(tail)
+    print(heads) 
+
+    # TO DO: DON't MOVE INTO 1x1 AREAS.
+
+
+    # TO DO: DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
+
+    for item in heads:
+        tail += [[item[0]-1, item[1]], [item[0]+1, item[1]], [item[0], item[1]-1], [item[0], item[1]+1]]
+
     print(tail)
+
 
     if future_pos in tail:
         print("future pos: ", future_pos, "in tail. Dodge!")
         return False
+
 
     # if there's no obstacles in da wae:
     return True

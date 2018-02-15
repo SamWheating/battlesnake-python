@@ -129,7 +129,7 @@ def validate_move(data, direction):
             return False
 
 
-    # DON'T HIT YOUR OWN TAIL
+    # DON'T HIT YOUR OWN TAIL OR OTHER SNAKES
 
     if direction == 'right':
         future_x = x + 1
@@ -151,8 +151,9 @@ def validate_move(data, direction):
 
     tail = []
 
-    for segment in data['you']['body']['data'][1:-1]:
-        tail.append([int(segment['x']), int(segment['y'])])
+    for snake in data['snakes']['data']:
+        for segment in snake['body']['data'][:-1]:
+            tail.append([int(segment['x']), int(segment['y'])])
 
     print(future_pos)
     print(tail)

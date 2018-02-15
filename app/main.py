@@ -71,15 +71,15 @@ def move():
 
     else: direction = random.choice(directions)
 
-    if not validate_move(data, direction):
+    if not validate_move(data, direction, 1):
         directions.remove(direction)
         direction = random.choice(directions)
 
-    if not validate_move(data, direction):
+    if not validate_move(data, direction, 2):
         directions.remove(direction)
         direction = random.choice(directions)
 
-    if not validate_move(data, direction):
+    if not validate_move(data, direction, 3):
         directions.remove(direction)
         direction = random.choice(directions)
 
@@ -91,7 +91,7 @@ def move():
         'taunt': 'battlesnake-python!'
     }
 
-def validate_move(data, direction):
+def validate_move(data, direction, priority):
 
     # VALIDATE MOVE:
     # Check that the future position of the head isn't:
@@ -165,17 +165,24 @@ def validate_move(data, direction):
     if [x,y] in heads:
         heads.remove([x,y])
 
-#    print(future_pos)
-#    print(tail)
-    print(heads) 
-
     # TO DO: DON't MOVE INTO 1x1 AREAS.
 
 
-    # TO DO: DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
 
-    for item in heads:
-        tail += [[item[0]-1, item[1]], [item[0]+1, item[1]], [item[0], item[1]-1], [item[0], item[1]+1]]
+
+    # DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
+
+    if priority < 3:
+        for item in heads:
+            tail += [[item[0]-1, item[1]], [item[0]+1, item[1]], [item[0], item[1]-1], [item[0], item[1]+1]]
+
+            # NOTES HERE:
+            # urgency added as a prioritization, as this is a high-risk but not certain-death move.
+            # i.e if all other examples are certain death, moving close to an opponents head is acceptable.
+
+
+
+
 
     print(tail)
 

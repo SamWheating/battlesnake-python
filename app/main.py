@@ -119,7 +119,8 @@ def validate_move(data, direction, priority, position):
 
     # DON'T HIT WALLS
 
-    [x, y] = position
+    x = position[0]
+    y = position[1]
 
     if x == 0:
         if direction == 'left':
@@ -144,7 +145,9 @@ def validate_move(data, direction, priority, position):
 
     # DON'T HIT YOUR OWN TAIL OR OTHER SNAKES
 
-    future_pos = [future_x, future_y] = [sum(x) for x in zip(position, DIRECTIONS[direction])]
+
+    future_pos = [future_x, future_y] = [sum(q) for q in zip(position, DIRECTIONS[direction])]
+
 
     tail = []   # this is the list of points to not enter
     heads = []  # for avoiding head areas
@@ -156,11 +159,14 @@ def validate_move(data, direction, priority, position):
             tail.append([int(segment['x']), int(segment['y'])])
 
     
-    for snake in data['snakes']['data'][1:]:
+    for snake in data['snakes']['data'][:]:
         heads.append([int(snake['body']['data'][0]['x']), int(snake['body']['data'][0]['y'])])
-    
-    if [x,y] in heads:          # don't worry about your own head.
+
+   # don't worry about your own head.
+    try:
         heads.remove([x,y])
+    except:
+        pass
 
     # check that it isn't a 1x1 space:    
 

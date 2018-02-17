@@ -162,13 +162,21 @@ def validate_move(data, direction, priority):
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])
 
-    if [x,y] in heads:
+    if [x,y] in heads:          # add list of heads of the other snakes (stay away!)
         heads.remove([x,y])
 
-    # TO DO: DON't MOVE INTO 1x1 AREAS.
+    # TO DO: DON't MOVE INTO CLOSED-OFF 1x1 AREAS.
 
+    surrounding_points = [[future_x+1, future_y], [future_x-1, future_y], [future_x, future_y+1], [future_x, future_y-1]]
 
+    count = 0
 
+    for item in surrounding_points:
+        if item in tail:
+            count += 1
+
+    if count == 4: 
+        return False
 
     # DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
 

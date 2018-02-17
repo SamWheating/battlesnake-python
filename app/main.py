@@ -12,6 +12,10 @@ import random
 # Go to http://localhost:3000
 # use local ip port 8080 (http://172.17.0.1:8080)
 
+DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
+
+TAUNTS = ['lil pump!', 'eskettit!', 'little pump!']
+
 @bottle.route('/static/<path:path>')
 def static(path):
     return bottle.static_file(path, root='static/')
@@ -53,8 +57,6 @@ def move():
     target_x = int(data['food']['data'][0]['x'])
     target_y = int(data['food']['data'][0]['y'])
 
-    print("at: ", x, y, "going to: ", target_x, target_y)
-
     directions = ['up', 'left', 'right', 'down']
 
     if x < target_x:
@@ -71,101 +73,96 @@ def move():
 
     else: direction = random.choice(directions)
 
-    if not validate_move(data, direction, 1):
+    first_move = direction
+
+    if not validate_move(data, direction, 1, [x, y]):
+        directions.remove(direction)
+
+    # if the initial move is invalid, try switching the search order:
+
+        if y < target_y and direction != 'down':
+            direction = 'down'
+
+        elif y > target_y and direction != 'up':
+            direction = 'up'
+
+        elif x < target_x and direction != 'right':
+            direction = 'right'
+
+        elif x > target_x and direction != 'left':
+            direction = 'left'
+
+        else: direction = random.choice(directions)
+
+    if not validate_move(data, direction, 2, [x, y]):
         directions.remove(direction)
         direction = random.choice(directions)
 
-    if not validate_move(data, direction, 2):
+    if not validate_move(data, direction, 3, [x, y]):
         directions.remove(direction)
         direction = random.choice(directions)
 
-    if not validate_move(data, direction, 3):
-        directions.remove(direction)
-        direction = random.choice(directions)
-
-    print(direction)
-
-    # TODO: Do things with data
     return {
         'move': direction,
-        'taunt': 'battlesnake-python!'
+        'taunt': random.choice(TAUNTS)
     }
 
-def validate_move(data, direction, priority):
+def validate_move(data, direction, priority, position):
 
     # VALIDATE MOVE:
     # Check that the future position of the head isn't:
     #   a) on the snake's tail.
     #   b) outside the bounds of the game field.
-
-    print("testing move", direction)
+    #   c) in a 1x1 space.
 
     # checking for hazards if snake is to make the chosen move.
 
-    x = int(data['you']['body']['data'][0]['x'])
-    y = int(data['you']['body']['data'][0]['y'])
-
     # DON'T HIT WALLS
+
+    [x, y] = position
 
     if x == 0:
         if direction == 'left':
-            print("tried to run out left side")
+            #print("tried to run out left side")
             return False
 
     if y == 0:
         if direction == 'up':
-            print("tried to run out top side")
+            #print("tried to run out top side")
             return False
 
     if x == (int(data['width'])-1):
         if direction == 'right':
-            print("tried to run out right side")
+            #print("tried to run out right side")
             return False
 
     if y == (int(data['height'])-1):
         if direction == 'down':
-            print("tried to run out bottom side")
+            #print("tried to run out bottom side")
             return False
 
 
     # DON'T HIT YOUR OWN TAIL OR OTHER SNAKES
 
-    if direction == 'right':
-        future_x = x + 1
-        future_y = y
-
-    elif direction == 'left':
-        future_x = x - 1
-        future_y = y
-
-    elif direction == 'up':
-        future_x = x
-        future_y = y - 1
-
-    elif direction == 'down':
-        future_x = x
-        future_y = y + 1
-
-    future_pos = [future_x, future_y]
+    future_pos = [future_x, future_y] = [sum(x) for x in zip(position, DIRECTIONS[direction])]
 
     tail = []   # this is the list of points to not enter
     heads = []  # for avoiding head areas
+
+    # add all snakes to the list of points to not enter (including oneself)
 
     for snake in data['snakes']['data']:
         for segment in snake['body']['data'][:-1]:
             tail.append([int(segment['x']), int(segment['y'])])
 
     
-    for snake in data['snakes']['data'][:]:
+    for snake in data['snakes']['data'][1:]:
         heads.append([int(snake['body']['data'][0]['x']), int(snake['body']['data'][0]['y'])])
     
-    y = int(data['you']['body']['data'][0]['y'])
-    x = int(data['you']['body']['data'][0]['x'])
-
-    if [x,y] in heads:          # add list of heads of the other snakes (stay away!)
+    if [x,y] in heads:          # don't worry about your own head.
         heads.remove([x,y])
 
-    # TO DO: DON't MOVE INTO CLOSED-OFF 1x1 AREAS.
+    # check that it isn't a 1x1 space:    
 
     surrounding_points = [[future_x+1, future_y], [future_x-1, future_y], [future_x, future_y+1], [future_x, future_y-1]]
 
@@ -175,7 +172,7 @@ def validate_move(data, direction, priority):
         if item in tail:
             count += 1
 
-    if count == 4: 
+    if count == 4:              # if the space is confirmed to be a dead-end
         return False
 
     # DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
@@ -188,15 +185,8 @@ def validate_move(data, direction, priority):
             # urgency added as a prioritization, as this is a high-risk but not certain-death move.
             # i.e if all other examples are certain death, moving close to an opponents head is acceptable.
 
-
-
-
-
-    print(tail)
-
-
     if future_pos in tail:
-        print("future pos: ", future_pos, "in tail. Dodge!")
+        print future_pos
         return False
 
 
@@ -204,6 +194,14 @@ def validate_move(data, direction, priority):
     return True
 
 
+def heuristic_function(data, direction, position):
+
+
+
+    # To Do: calculate an effective score for each possible move.
+    # return a single number. Highest number will be taken.
+
+    pass
 
 # Expose WSGI app (so gunicorn can find it)
 application = bottle.default_app()

@@ -55,12 +55,11 @@ def move():
     data = bottle.request.json
 
     health = int(data['you']['health'])
-    print health
 
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])
 
-    if health > 50:
+    if health > 50:                                                 # ONLY chase food if actually hungry
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])
 

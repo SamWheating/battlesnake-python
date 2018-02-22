@@ -10,7 +10,10 @@ import random
 # python app/main.py
 # 
 # Go to http://localhost:3000
-# use local ip port 8080 (http://172.17.0.1:8080)
+#
+# use local http://{local IP}:8080
+# 
+# Find local IP with "hostname -I"
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 
@@ -51,11 +54,19 @@ def move():
 
     data = bottle.request.json
 
+    health = int(data['you']['health'])
+    print health
+
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])
 
-    target_x = int(data['food']['data'][0]['x'])
-    target_y = int(data['food']['data'][0]['y'])
+    if health > 50:
+        target_x = int(data['you']['body']['data'][-1]['x'])
+        target_y = int(data['you']['body']['data'][-1]['y'])
+
+    else:
+        target_x = int(data['food']['data'][0]['x'])
+        target_y = int(data['food']['data'][0]['y'])
 
     directions = ['up', 'left', 'right', 'down']
 
@@ -142,9 +153,7 @@ def validate_move(data, direction, priority, position):
             #print("tried to run out bottom side")
             return False
 
-
     # DON'T HIT YOUR OWN TAIL OR OTHER SNAKES
-
 
     future_pos = [future_x, future_y] = [sum(q) for q in zip(position, DIRECTIONS[direction])]
 
@@ -166,7 +175,7 @@ def validate_move(data, direction, priority, position):
     try:
         heads.remove([x,y])
     except:
-        pass
+        pass    
 
     # check that it isn't a 1x1 space:    
 
@@ -202,11 +211,24 @@ def validate_move(data, direction, priority, position):
 
 def heuristic_function(data, direction, position):
 
+    future_pos = [future_x, future_y] = [sum(q) for q in zip(position, DIRECTIONS[direction])]  # gives future position as [x,y]
+
+    # recursively find the size of the space to be moved into
+
+    bad_list = []
+    for snake in data['snakes']['data']:
+        for segment in snake['body']['data'][:-1]:
+            tail.append([int(segment['x']), int(segment['y'])])
+
+
 
 
     # To Do: calculate an effective score for each possible move.
     # return a single number. Highest number will be taken.
 
+    pass
+
+def expand(point, bad_list, bounds):
     pass
 
 # Expose WSGI app (so gunicorn can find it)

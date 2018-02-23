@@ -1,6 +1,7 @@
 import bottle
 import os
 import random
+import math
 
 
 # NOTES TO SAM:
@@ -57,15 +58,27 @@ def move():
     health = int(data['you']['health'])
 
     y = int(data['you']['body']['data'][0]['y'])
-    x = int(data['you']['body']['data'][0]['x'])
+    x = int(data['you']['body']['data'][0]['x'])    
 
-    if health > 50:                                                 # ONLY chase food if actually hungry
+    if health > 50:                                                 # ONLY chase food if actually hungrye
+
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])
 
-    else:
-        target_x = int(data['food']['data'][0]['x'])
-        target_y = int(data['food']['data'][0]['y'])
+    else:           # move to the closest available food (inefficient af but w/e)
+
+        food_locs = []
+        for i in range(len(data['food']['data'])):
+            food_locs.append([data['food']['data'][i]['x'], data['food']['data'][i]['y']])
+
+        food_distances = []
+        for i in range(len(data['food']['data'])):
+            food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
+
+        closest = min(food_distances)
+
+        target_x = food_locs[food_distances.index(int(closest))][0]
+        target_y = food_locs[food_distances.index(int(closest))][1]
 
     directions = ['up', 'left', 'right', 'down']
 

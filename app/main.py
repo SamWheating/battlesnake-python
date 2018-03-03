@@ -220,11 +220,13 @@ def validate_move(data, direction, priority, position):
 
     for item in surrounding_points:
         if item in tail: count += 1
+        """
         elif item[0] < 0: count += 1
         elif item[0] >=  (int(data['width'])-1): count += 1
         elif item[1] < 0: count += 1
         elif item[1] >=  (int(data['height'])-1): count += 1
-
+        """
+        
     if count == 4:              # if the space is confirmed to be a dead-end
         return False
 

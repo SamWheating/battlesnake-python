@@ -33,7 +33,6 @@ def start():
     board_width = data['width']
     board_height = data['height']
 
-
     # Using shrek as the snek avatar for now
     head_url = 'https://orig00.deviantart.net/04d8/f/2017/095/f/9/shrek_head_png_by_darkwoodsx-db4reoe.png'
 
@@ -43,12 +42,14 @@ def start():
         'head_url': head_url,
         'name': 'Perogie Joe',
         "head_type": "shades",       # For some reason these don't work.
-        "tail_type": "round-bum"        # This one too
+        "tail_type": "freckled"        # This one too
     }
 
 
 @bottle.post('/move')
 def move():
+
+    taunt = random.choice(TAUNTS)
 
     # MOVE function:
     # Finds food and directs the snake there in an x-y search pattern
@@ -67,6 +68,7 @@ def move():
 
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])
+        taunt = "Just chilling!"
 
     else:           # move to the closest available food (inefficient af but w/e)
 
@@ -82,6 +84,7 @@ def move():
 
         target_x = food_locs[food_distances.index(int(closest))][0]
         target_y = food_locs[food_distances.index(int(closest))][1]
+        taunt = "so hungry"
 
     directions = ['up', 'left', 'right', 'down']
 

@@ -133,7 +133,7 @@ def move():
 
     return {
         'move': direction,
-        'taunt': random.choice(TAUNTS)
+        'taunt': taunt
     }
 
 def validate_move(data, direction, priority, position):

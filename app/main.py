@@ -34,7 +34,7 @@ def start():
     board_height = data['height']
 
     # Using shrek as the snek avatar for now
-    head_url = 'https://i.imgur.com/JzDCPYo.jpg'
+    head_url = 'https://i.imgur.com/DrOPSWz.png'
 
     return {
         'color': '#A2798F',
@@ -57,14 +57,31 @@ def move():
 
     data = bottle.request.json
 
+    # DETERMINE WHETHER TO GO FOR FOOD OR STAY SAFE
+
+    sizeofboard = int(data['width']) * int(data['height'])
+    sizeofboard = float(sizeofboard)
+
+    numberofsnakes = 0.0
+
+    for snake in data['snakes']['data']:
+        for segment in snake['body']['data'][:]:
+            numberofsnakes += 1.0
+
+    coverage = numberofsnakes / sizeofboard
+
+    THRESHOLD = int(data['width']) + int(data['height']) + int(150*coverage)
+
     health = int(data['you']['health'])
 
-    print health
+    # DECISION HAS BEEN MADE
 
+    print THRESHOLD
+    # find head coordinates
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])    
 
-    if health > 25:                                                 # ONLY chase food if actually hungrye
+    if health > THRESHOLD:                                                 # ONLY chase food if actually hungrye
 
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])
@@ -146,7 +163,7 @@ def validate_move(data, direction, priority, position):
 
     # checking for hazards if snake is to make the chosen move.
 
-    # DON'T HIT WALLS
+    # DON'T HIT WALL
 
     x = position[0]
     y = position[1]
@@ -202,8 +219,11 @@ def validate_move(data, direction, priority, position):
     count = 0
 
     for item in surrounding_points:
-        if item in tail:
-            count += 1
+        if item in tail: count += 1
+        elif item[0] < 0: count += 1
+        elif item[0] >=  (int(data['width'])-1): count += 1
+        elif item[1] < 0: count += 1
+        elif item[1] >=  (int(data['height'])-1): count += 1
 
     if count == 4:              # if the space is confirmed to be a dead-end
         return False
@@ -219,8 +239,7 @@ def validate_move(data, direction, priority, position):
             # i.e if all other examples are certain death, moving close to an opponents head is acceptable.
 
     if future_pos in tail:
-        print future_pos
-        return False
+        return False    
 
 
     # if there's no obstacles in da wae:
@@ -239,14 +258,13 @@ def heuristic_function(data, direction, position):
             tail.append([int(segment['x']), int(segment['y'])])
 
 
-
-
     # To Do: calculate an effective score for each possible move.
     # return a single number. Highest number will be taken.
 
     pass
 
 def expand(point, bad_list, bounds):
+
     pass
 
 # Expose WSGI app (so gunicorn can find it)

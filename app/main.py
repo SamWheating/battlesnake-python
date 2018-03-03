@@ -19,7 +19,7 @@ import math
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 
-TAUNTS = ['lil pump!', 'eskettit!', 'little pump!']
+TAUNTS = ['UVIC Satellite Design Team is #1']
 
 @bottle.route('/static/<path:path>')
 def static(path):
@@ -38,12 +38,12 @@ def start():
     head_url = 'https://orig00.deviantart.net/04d8/f/2017/095/f/9/shrek_head_png_by_darkwoodsx-db4reoe.png'
 
     return {
-        'color': '#0FFFFB',
+        'color': '#A2798F',
         'taunt': '{} ({}x{})'.format(game_id, board_width, board_height),
         'head_url': head_url,
         'name': 'Perogie Joe',
-        "head_type": "pixel",       # For some reason these don't work.
-        "tail_type": "pixel"        # This one too
+        "head_type": "shades",       # For some reason these don't work.
+        "tail_type": "round-bum"        # This one too
     }
 
 
@@ -63,7 +63,7 @@ def move():
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])    
 
-    if health > 50:                                                 # ONLY chase food if actually hungrye
+    if health > 25:                                                 # ONLY chase food if actually hungrye
 
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])

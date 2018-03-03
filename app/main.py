@@ -34,7 +34,7 @@ def start():
     board_height = data['height']
 
     # Using shrek as the snek avatar for now
-    head_url = 'https://orig00.deviantart.net/04d8/f/2017/095/f/9/shrek_head_png_by_darkwoodsx-db4reoe.png'
+    head_url = 'https://imgur.com/a/6YL8M.jpg'
 
     return {
         'color': '#A2798F',

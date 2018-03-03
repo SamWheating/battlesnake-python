@@ -19,7 +19,7 @@ import math
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 
-TAUNTS = ['UVIC Satellite Design Team is #1']
+TAUNTS = ['UVIC Satellite Design Team is #1', 'ESKETTIT']
 
 @bottle.route('/static/<path:path>')
 def static(path):
@@ -62,6 +62,9 @@ def move():
     sizeofboard = int(data['width']) * int(data['height'])
     sizeofboard = float(sizeofboard)
 
+    y = int(data['you']['body']['data'][0]['y'])
+    x = int(data['you']['body']['data'][0]['x'])   
+
     numberofsnakes = 0.0
 
     for snake in data['snakes']['data']:
@@ -70,34 +73,33 @@ def move():
 
     coverage = numberofsnakes / sizeofboard
 
-    THRESHOLD = int(data['width']) + int(data['height']) + int(150*coverage)
+    THRESHOLD = int(data['width']) + int(data['height']) - 10 + int(100*coverage)
 
     health = int(data['you']['health'])
+
+    food_locs = []
+    for i in range(len(data['food']['data'])):
+        food_locs.append([data['food']['data'][i]['x'], data['food']['data'][i]['y']])
+
+    food_distances = []
+    for i in range(len(data['food']['data'])):
+        food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
+
+    closest = min(food_distances)
 
     # DECISION HAS BEEN MADE
 
     print THRESHOLD
-    # find head coordinates
-    y = int(data['you']['body']['data'][0]['y'])
-    x = int(data['you']['body']['data'][0]['x'])    
 
-    if health > THRESHOLD:                                                 # ONLY chase food if actually hungrye
+    # find head coordinates 
 
-        target_x = int(data['you']['body']['data'][-1]['x'])
-        target_y = int(data['you']['body']['data'][-1]['y'])
-        taunt = "perfectly content"
+    if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungrye
+
+            target_x = int(data['you']['body']['data'][-1]['x'])
+            target_y = int(data['you']['body']['data'][-1]['y'])
+            taunt = "perfectly content"
 
     else:           # move to the closest available food (inefficient af but w/e)
-
-        food_locs = []
-        for i in range(len(data['food']['data'])):
-            food_locs.append([data['food']['data'][i]['x'], data['food']['data'][i]['y']])
-
-        food_distances = []
-        for i in range(len(data['food']['data'])):
-            food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
-
-        closest = min(food_distances)
 
         target_x = food_locs[food_distances.index(int(closest))][0]
         target_y = food_locs[food_distances.index(int(closest))][1]
@@ -220,13 +222,11 @@ def validate_move(data, direction, priority, position):
 
     for item in surrounding_points:
         if item in tail: count += 1
-        """
         elif item[0] < 0: count += 1
-        elif item[0] >=  (int(data['width'])-1): count += 1
+        elif item[0] >  (int(data['width'])-1): count += 1
         elif item[1] < 0: count += 1
-        elif item[1] >=  (int(data['height'])-1): count += 1
-        """
-        
+        elif item[1] >  (int(data['height'])-1): count += 1
+
     if count == 4:              # if the space is confirmed to be a dead-end
         return False
 

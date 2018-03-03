@@ -57,10 +57,8 @@ def move():
     data = bottle.request.json
 
     health = int(data['you']['health'])
-<<<<<<< HEAD
-=======
+
     print health
->>>>>>> c7d7853a3da87ef53322ed056b580d9d007578b0
 
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])    
@@ -70,7 +68,6 @@ def move():
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])
 
-<<<<<<< HEAD
     else:           # move to the closest available food (inefficient af but w/e)
 
         food_locs = []
@@ -85,15 +82,6 @@ def move():
 
         target_x = food_locs[food_distances.index(int(closest))][0]
         target_y = food_locs[food_distances.index(int(closest))][1]
-=======
-    if health > 50:
-        target_x = int(data['you']['body']['data'][-1]['x'])
-        target_y = int(data['you']['body']['data'][-1]['y'])
-
-    else:
-        target_x = int(data['food']['data'][0]['x'])
-        target_y = int(data['food']['data'][0]['y'])
->>>>>>> c7d7853a3da87ef53322ed056b580d9d007578b0
 
     directions = ['up', 'left', 'right', 'down']
 

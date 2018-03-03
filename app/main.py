@@ -34,7 +34,7 @@ def start():
     board_height = data['height']
 
     # Using shrek as the snek avatar for now
-    head_url = 'https://imgur.com/a/6YL8M.jpg'
+    head_url = 'https://i.imgur.com/JzDCPYo.jpg'
 
     return {
         'color': '#A2798F',
@@ -68,7 +68,7 @@ def move():
 
         target_x = int(data['you']['body']['data'][-1]['x'])
         target_y = int(data['you']['body']['data'][-1]['y'])
-        taunt = "Just chilling!"
+        taunt = "perfectly content"
 
     else:           # move to the closest available food (inefficient af but w/e)
 
@@ -84,7 +84,7 @@ def move():
 
         target_x = food_locs[food_distances.index(int(closest))][0]
         target_y = food_locs[food_distances.index(int(closest))][1]
-        taunt = "so hungry"
+        taunt = "...just gonna ssnake past ya there...."
 
     directions = ['up', 'left', 'right', 'down']
 

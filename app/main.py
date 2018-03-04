@@ -93,7 +93,7 @@ def move():
 
     # find head coordinates 
 
-    if health > THRESHOLD and  closest > 3:                                     # ONLY chase food if actually hungrye
+    if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungrye
 
             target_x = int(data['you']['body']['data'][-1]['x'])
             target_y = int(data['you']['body']['data'][-1]['y'])

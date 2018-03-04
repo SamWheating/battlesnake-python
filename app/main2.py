@@ -64,11 +64,46 @@ def move():
 
     y = int(data['you']['body']['data'][0]['y'])
     x = int(data['you']['body']['data'][0]['x'])   
-                                  # ONLY chase food if actually hungrye
 
-    target_x = int(data['you']['body']['data'][-1]['x'])
-    target_y = int(data['you']['body']['data'][-1]['y'])
-    taunt = "perfectly content"
+    numberofsnakes = 0.0
+
+    for snake in data['snakes']['data']:
+        for segment in snake['body']['data'][:]:
+            numberofsnakes += 1.0
+
+    coverage = numberofsnakes / sizeofboard
+
+    THRESHOLD = int(data['width']) + int(data['height']) + 10 + int(100*coverage)
+
+    health = int(data['you']['health'])
+
+    food_locs = []
+    for i in range(len(data['food']['data'])):
+        food_locs.append([data['food']['data'][i]['x'], data['food']['data'][i]['y']])
+
+    food_distances = []
+    for i in range(len(data['food']['data'])):
+        food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
+
+    closest = min(food_distances)
+
+    # DECISION HAS BEEN MADE
+
+    print THRESHOLD
+
+    # find head coordinates 
+
+    if health > THRESHOLD and  closest > 3:                                     # ONLY chase food if actually hungrye
+
+            target_x = int(data['you']['body']['data'][-1]['x'])
+            target_y = int(data['you']['body']['data'][-1]['y'])
+            taunt = "perfectly content"
+
+    else:           # move to the closest available food (inefficient af but w/e)
+
+        target_x = food_locs[food_distances.index(int(closest))][0]
+        target_y = food_locs[food_distances.index(int(closest))][1]
+        taunt = "...just gonna ssnake past ya there...."
 
     directions = ['up', 'left', 'right', 'down']
 

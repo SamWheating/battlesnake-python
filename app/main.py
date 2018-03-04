@@ -73,7 +73,7 @@ def move():
 
     coverage = numberofsnakes / sizeofboard
 
-    THRESHOLD = int(data['width']) + int(data['height']) + 10 + int(100*coverage)
+    THRESHOLD = int(data['width']) + int(data['height']) + 15 + int(55*coverage)
 
     health = int(data['you']['health'])
 
@@ -231,6 +231,7 @@ def validate_move(data, direction, priority, position):
         return False
 
     # DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
+    # This is brokend uhhh 
 
     if priority < 3:
         for item in heads:

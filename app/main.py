@@ -3,6 +3,7 @@ import os
 import random
 import bottle
 import math
+import astar
 
 from api import ping_response, start_response, move_response, end_response
 
@@ -43,7 +44,6 @@ def start():
             initialize your snake state here using the
             request's data if necessary.
     """
-    print(json.dumps(data))
 
     color = "#5F7BA8"
 
@@ -89,13 +89,9 @@ def move():
 
     closest = min(food_distances)
 
-    # DECISION HAS BEEN MADE
-
-    print THRESHOLD
-
     # find head coordinates 
 
-    if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungrye
+    if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungry
 
             target_x = int(data['you']['body'][-1]['x'])
             target_y = int(data['you']['body'][-1]['y'])
@@ -106,6 +102,37 @@ def move():
         target_x = food_locs[food_distances.index(int(closest))][0]
         target_y = food_locs[food_distances.index(int(closest))][1]
         taunt = "...just gonna ssnake past ya there...."
+
+    # direction = astar_move(data, (x, y), (target_x, target_y))
+    direction = quick_move(data, (x, y), (target_x, target_y))
+
+    return {
+        'move': direction,
+        'taunt': taunt
+    }
+
+
+@bottle.post('/end')
+def end():
+    data = bottle.request.json
+
+    """
+    TODO: If your snake AI was stateful,
+        clean up any stateful objects here.
+    """
+    # print(json.dumps(data))
+
+    return end_response()
+
+def quick_move(data, location, target):
+    """ 
+    Quick move towards the target in an x-y pattern.
+    """
+
+    x = location[0]
+    y = location[1]
+    target_x = target[0]
+    target_y = target[1]
 
     directions = ['up', 'left', 'right', 'down']
 
@@ -152,23 +179,38 @@ def move():
         directions.remove(direction)
         direction = random.choice(directions)
 
-    return {
-        'move': direction,
-        'taunt': taunt
-    }
+    return direction
 
+def astar_move(data, location, target):
 
-@bottle.post('/end')
-def end():
-    data = bottle.request.json
+    # Make maze before sending to a-star pathing function
+    maze = [[0 for _ in range(data['board']['width'])] for _ in range(data['board']['height'])]
 
-    """
-    TODO: If your snake AI was stateful,
-        clean up any stateful objects here.
-    """
-    print(json.dumps(data))
+    # add all of the other snakes
+    for snake in data['board']['snakes']:
+        for seg in snake['body'][:-1]:
+            maze[seg['x']][seg['y']] = 1
 
-    return end_response()
+    # add self
+    for seg in data['you']['body'][:-2]:
+        maze[seg['x']][seg['y']] = 1
+
+    path = astar.astar(maze, location, target)
+
+    print location
+    print target
+
+    maze[location[0]][location[1]] = "S"
+    maze[target[0]][target[1]] = "T"
+
+    for row in maze:
+        print row
+
+    print "\n\n\n"
+
+    print path
+
+    return 'down'
 
 def validate_move(data, direction, priority, position):
 

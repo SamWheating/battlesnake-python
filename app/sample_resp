@@ -1,0 +1,32 @@
+{
+  "game": {
+    "id": "game-id-string"
+  },
+  "turn": "int",
+  "board": {
+    "height": "int",
+    "width": "int",
+    "food": [{
+      "x": "int",
+      "y": "int"
+    }],
+    "snakes": [{
+      "id": "int",
+      "name": "string",
+      "health": "int",
+      "body": [{
+        "x": "int",
+        "y": "int"
+      }]
+    }]
+  },
+  "you": {
+    "id": "int",
+    "name": "string",
+    "health": "int",
+    "body": [{
+      "x": "int",
+      "y": "int"
+    }]
+  }
+}

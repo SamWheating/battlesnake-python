@@ -1,55 +1,56 @@
-import bottle
+import json
 import os
 import random
-import math
+import bottle
 
-
-# NOTES TO SAM:
-# To run Game locally:
-#
-# sudo start_server.sh
-# python app/main.py
-# 
-# Go to http://localhost:3000
-#
-# use local http://{local IP}:8080
-# 
-# Find local IP with "hostname -I"
-
+from api import ping_response, start_response, move_response, end_response
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
-
 TAUNTS = ['UVIC Satellite Design Team is #1', 'ESKETTIT']
+
+@bottle.route('/')
+def index():
+    return '''
+    Battlesnake documentation can be found at
+       <a href="https://docs.battlesnake.io">https://docs.battlesnake.io</a>.
+    '''
 
 @bottle.route('/static/<path:path>')
 def static(path):
+    """
+    Given a path, return the static file located relative
+    to the static folder.
+
+    This can be used to return the snake head URL in an API response.
+    """
     return bottle.static_file(path, root='static/')
 
+@bottle.post('/ping')
+def ping():
+    """
+    A keep-alive endpoint used to prevent cloud application platforms,
+    such as Heroku, from sleeping the application instance.
+    """
+    return ping_response()
 
 @bottle.post('/start')
 def start():
     data = bottle.request.json
-    game_id = data['game_id']
-    board_width = data['board']['width']
-    board_height = data['board']['height']
 
-    # Using shrek as the snek avatar for now
-    head_url = 'https://i.imgur.com/DrOPSWz.png'
+    """
+    TODO: If you intend to have a stateful snake AI,
+            initialize your snake state here using the
+            request's data if necessary.
+    """
+    print(json.dumps(data))
 
-    return {
-        'color': '#A2798F',
-        'taunt': '{} ({}x{})'.format(game_id, board_width, board_height),
-        'head_url': head_url,
-        'name': 'Perogie Joe',
-        "head_type": "shades",       # For some reason these don't work.
-        "tail_type": "freckled"        # This one too
-    }
+    color = "#00FF00"
+
+    return start_response(color)
 
 
 @bottle.post('/move')
 def move():
-
-    taunt = random.choice(TAUNTS)
 
     # MOVE function:
     # Finds food and directs the snake there in an x-y search pattern
@@ -155,6 +156,19 @@ def move():
         'taunt': taunt
     }
 
+
+@bottle.post('/end')
+def end():
+    data = bottle.request.json
+
+    """
+    TODO: If your snake AI was stateful,
+        clean up any stateful objects here.
+    """
+    print(json.dumps(data))
+
+    return end_response()
+
 def validate_move(data, direction, priority, position):
 
     # VALIDATE MOVE:
@@ -249,28 +263,13 @@ def validate_move(data, direction, priority, position):
     return True
 
 
-def heuristic_function(data, direction, position):
-
-    future_pos = [future_x, future_y] = [sum(q) for q in zip(position, DIRECTIONS[direction])]  # gives future position as [x,y]
-
-    # recursively find the size of the space to be moved into
-
-    bad_list = []
-    for snake in data['board']['snakes']['data']:
-        for segment in snake['body']['data'][:-1]:
-            tail.append([int(segment['x']), int(segment['y'])])
-
-
-    # To Do: calculate an effective score for each possible move.
-    # return a single number. Highest number will be taken.
-
-    pass
-
-def expand(point, bad_list, bounds):
-
-    pass
-
 # Expose WSGI app (so gunicorn can find it)
 application = bottle.default_app()
+
 if __name__ == '__main__':
-    bottle.run(application, host=os.getenv('IP', '0.0.0.0'), port=os.getenv('PORT', '8080'))
+    bottle.run(
+        application,
+        host=os.getenv('IP', '0.0.0.0'),
+        port=os.getenv('PORT', '8080'),
+        debug=os.getenv('DEBUG', True)
+    )

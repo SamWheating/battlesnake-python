@@ -67,7 +67,7 @@ def move():
 
     numberofsnakes = 0.0
 
-    for snake in data['snakes']:
+    for snake in data['board']['snakes']:
         for segment in snake['body']:
             numberofsnakes += 1.0
 
@@ -200,12 +200,12 @@ def validate_move(data, direction, priority, position):
 
     # add all snakes to the list of points to not enter (including oneself)
 
-    for snake in data['snakes']:
+    for snake in data['board']['snakes']:
         for segment in snake['body'][:-1]:
             tail.append([int(segment['x']), int(segment['y'])])
 
     
-    for snake in data['snakes'][:]:
+    for snake in data['board']['snakes'][:]:
         heads.append([int(snake['body'][0]['x']), int(snake['body'][0]['y'])])
 
    # don't worry about your own head.
@@ -256,7 +256,7 @@ def heuristic_function(data, direction, position):
     # recursively find the size of the space to be moved into
 
     bad_list = []
-    for snake in data['snakes']['data']:
+    for snake in data['board']['snakes']['data']:
         for segment in snake['body']['data'][:-1]:
             tail.append([int(segment['x']), int(segment['y'])])
 

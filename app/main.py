@@ -59,30 +59,30 @@ def move():
 
     # DETERMINE WHETHER TO GO FOR FOOD OR STAY SAFE
 
-    sizeofboard = int(data['width']) * int(data['height'])
+    sizeofboard = int(data['board']['width']) * int(data['board']['height'])
     sizeofboard = float(sizeofboard)
 
-    y = int(data['you']['body']['data'][0]['y'])
-    x = int(data['you']['body']['data'][0]['x'])   
+    y = int(data['you']['body'][0]['data']['y'])
+    x = int(data['you']['body'][0]['data']['x'])   
 
     numberofsnakes = 0.0
 
     for snake in data['snakes']['data']:
-        for segment in snake['body']['data'][:]:
+        for segment in snake['body']:
             numberofsnakes += 1.0
 
     coverage = numberofsnakes / sizeofboard
 
-    THRESHOLD = int(data['width']) + int(data['height']) + 15 + int(55*coverage)
+    THRESHOLD = int(data['board']['width']) + int(data['board']['height']) + 15 + int(55*coverage)
 
     health = int(data['you']['health'])
 
     food_locs = []
-    for i in range(len(data['food']['data'])):
-        food_locs.append([data['food']['data'][i]['x'], data['food']['data'][i]['y']])
+    for i in range(len(data['board']['food'])):
+        food_locs.append([data['board']['food'][i]['x'], data['board']['food'][i]['y']])
 
     food_distances = []
-    for i in range(len(data['food']['data'])):
+    for i in range(len(data['board']['food']['data'])):
         food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
 
     closest = min(food_distances)
@@ -95,8 +95,8 @@ def move():
 
     if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungrye
 
-            target_x = int(data['you']['body']['data'][-1]['x'])
-            target_y = int(data['you']['body']['data'][-1]['y'])
+            target_x = int(data['you']['body'][-1]['x'])
+            target_y = int(data['you']['body'][-1]['y'])
             taunt = "perfectly content"
 
     else:           # move to the closest available food (inefficient af but w/e)
@@ -200,13 +200,13 @@ def validate_move(data, direction, priority, position):
 
     # add all snakes to the list of points to not enter (including oneself)
 
-    for snake in data['snakes']['data']:
-        for segment in snake['body']['data'][:-1]:
+    for snake in data['snakes']:
+        for segment in snake['body'][:-1]:
             tail.append([int(segment['x']), int(segment['y'])])
 
     
-    for snake in data['snakes']['data'][:]:
-        heads.append([int(snake['body']['data'][0]['x']), int(snake['body']['data'][0]['y'])])
+    for snake in data['snakes'][:]:
+        heads.append([int(snake['body'][0]['x']), int(snake['body'][0]['y'])])
 
    # don't worry about your own head.
     try:
@@ -223,9 +223,9 @@ def validate_move(data, direction, priority, position):
     for item in surrounding_points:
         if item in tail: count += 1
         elif item[0] < 0: count += 1
-        elif item[0] >  (int(data['width'])-1): count += 1
+        elif item[0] >  (int(data['board']['width'])-1): count += 1
         elif item[1] < 0: count += 1
-        elif item[1] >  (int(data['height'])-1): count += 1
+        elif item[1] >  (int(data['board']['height'])-1): count += 1
 
     if count == 4:              # if the space is confirmed to be a dead-end
         return False

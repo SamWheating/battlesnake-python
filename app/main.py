@@ -30,8 +30,8 @@ def static(path):
 def start():
     data = bottle.request.json
     game_id = data['game_id']
-    board_width = data['width']
-    board_height = data['height']
+    board_width = data['board']['width']
+    board_height = data['board']['height']
 
     # Using shrek as the snek avatar for now
     head_url = 'https://i.imgur.com/DrOPSWz.png'
@@ -180,12 +180,12 @@ def validate_move(data, direction, priority, position):
             #print("tried to run out top side")
             return False
 
-    if x == (int(data['width'])-1):
+    if x == (int(data['board']['width'])-1):
         if direction == 'right':
             #print("tried to run out right side")
             return False
 
-    if y == (int(data['height'])-1):
+    if y == (int(data['board']['height'])-1):
         if direction == 'down':
             #print("tried to run out bottom side")
             return False

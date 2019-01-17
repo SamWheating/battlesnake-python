@@ -62,12 +62,12 @@ def move():
     sizeofboard = int(data['board']['width']) * int(data['board']['height'])
     sizeofboard = float(sizeofboard)
 
-    y = int(data['you']['body'][0]['data']['y'])
-    x = int(data['you']['body'][0]['data']['x'])   
+    y = int(data['you']['body'][0]['y'])
+    x = int(data['you']['body'][0]['x'])   
 
     numberofsnakes = 0.0
 
-    for snake in data['snakes']['data']:
+    for snake in data['snakes']:
         for segment in snake['body']:
             numberofsnakes += 1.0
 
@@ -82,7 +82,7 @@ def move():
         food_locs.append([data['board']['food'][i]['x'], data['board']['food'][i]['y']])
 
     food_distances = []
-    for i in range(len(data['board']['food']['data'])):
+    for i in range(len(data['board']['food'])):
         food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
 
     closest = min(food_distances)

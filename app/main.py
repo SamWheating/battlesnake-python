@@ -8,9 +8,6 @@ import time
 
 from api import ping_response, start_response, move_response, end_response
 
-DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
-TAUNTS = ['UVIC Satellite Design Team is #1', 'ESKETTIT']
-
 # State Storage and Management:
 #
 # Stores the state like:
@@ -23,6 +20,7 @@ TAUNTS = ['UVIC Satellite Design Team is #1', 'ESKETTIT']
 #
 # remove record if not updated for 10s.
 
+DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 STATES = {}
 
 @bottle.route('/')
@@ -76,6 +74,7 @@ def get_state(data):
     if data['you']['id'] in STATES:
         STATES[data['you']['id']]['moves'] += 1
         STATES[data['you']['id']]['target'] = update_target(data, STATES[data['you']['id']])
+        STATES[data['you']['id']]['updated'] = time.time()
     else:
         STATES[data['you']['id']] = {
             'moves': 0,
@@ -89,7 +88,7 @@ def get_state(data):
     # Drop expired records (10s TTL)
 
     for state in STATES.keys():
-        if time.time() - STATES[state]['updated'] > 10:
+        if time.time() - STATES[state]['updated'] > 30:
             STATES.pop(state)
 
     # Update the nearest food:
@@ -140,7 +139,8 @@ def update_target(data, state):
 
 @bottle.post('/move')
 def move():
-
+    
+    global STATES
     # MOVE function:
     # Finds food and directs the snake there in an x-y search pattern
     # validates move 3x to ensure that the snake isn't gonna hit anything
@@ -148,6 +148,7 @@ def move():
     data = bottle.request.json
     state = get_state(data)
 
+    print STATES
     print state
 
     # print state
@@ -408,9 +409,16 @@ def validate_move(data, direction, priority, position):
 application = bottle.default_app()
 
 if __name__ == '__main__':
+
+    # If runnign on the GCP instance, use port 80.
+    if os.getenv("GCP"):
+        server_port = '80'
+    else:
+        server_port = '8080'
+
     bottle.run(
         application,
         host=os.getenv('IP', '0.0.0.0'),
-        port=os.getenv('PORT', '8080'),
+        port=os.getenv('PORT', server_port),
         debug=os.getenv('DEBUG', True)
     )

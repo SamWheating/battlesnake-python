@@ -60,9 +60,9 @@ def start():
             request's data if necessary.
     """
 
-    color = "#5F7BFF"
-    head = "beluga"
-    tail = "round-bum"
+    color = "#591275"
+    head = "bendr"
+    tail = "fat-rattle"
 
     return start_response(color, head, tail)
 
@@ -81,7 +81,7 @@ def get_state(data):
             'moves': 0,
             'updated': time.time(),
             'target': (1 , 1),
-            'next_point': (1, 1),
+            'next_point': (0, 0),
             'nearest_food': (0,0),
         }
 
@@ -117,17 +117,17 @@ def update_target(data, state):
     position = (int(data['you']['body'][0]['x']), int(data['you']['body'][0]['y']))
 
     # if it's time to eat, find the nearest food
-    if int(data['you']['health']) < 40:
+    if int(data['you']['health']) < 30:
         return state['nearest_food']
 
     # If we've reached a waypoint, go to the next one
     elif (position == state['target'] == state['next_point']):
         
         targets = [
-            (1, 1),
-            (1, int(data['board']['height'])-2),
-            (int(data['board']['width'])-2, int(data['board']['height'])-2),
-            (int(data['board']['width'])-2, 1)
+            (0, 0),
+            (0, int(data['board']['height'])-1),
+            (int(data['board']['width'])-1, int(data['board']['height'])-1),
+            (int(data['board']['width'])-1, 0)
         ]
 
         current_index = targets.index(state['target'])
@@ -147,6 +147,8 @@ def move():
 
     data = bottle.request.json
     state = get_state(data)
+
+    print state
 
     # print state
 
@@ -195,8 +197,6 @@ def move():
     #     taunt = "...just gonna ssnake past ya there...."
 
     # direction = astar_move(data, (x, y), (target_x, target_y))
-
-    print state
 
     y = int(data['you']['body'][0]['y'])
     x = int(data['you']['body'][0]['x'])  

@@ -4,11 +4,26 @@ import random
 import bottle
 import math
 import astar
+import time
 
 from api import ping_response, start_response, move_response, end_response
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 TAUNTS = ['UVIC Satellite Design Team is #1', 'ESKETTIT']
+
+# State Storage and Management:
+#
+# Stores the state like:
+#     {
+#         SnakeID : {
+#             ObjectivePoint: (1, 1),
+#             Updated: 29821.2324
+#         }
+#     }
+#
+# remove record if not updated for 10s.
+
+STATES = {}
 
 @bottle.route('/')
 def index():
@@ -45,40 +60,43 @@ def start():
             request's data if necessary.
     """
 
-    color = "#5F7BA8"
+    color = "#5F7BFF"
+    head = "beluga"
+    tail = "round-bum"
 
-    return start_response(color)
+    return start_response(color, head, tail)
 
 
-@bottle.post('/move')
-def move():
+def get_state(data):
 
-    # MOVE function:
-    # Finds food and directs the snake there in an x-y search pattern
-    # validates move 3x to ensure that the snake isn't gonna hit anything
+    # Grabs the state from a global variable and makes the required updates
 
-    data = bottle.request.json
+    global STATES
 
-    # DETERMINE WHETHER TO GO FOR FOOD OR STAY SAFE
+    if data['you']['id'] in STATES:
+        STATES[data['you']['id']]['moves'] += 1
+        STATES[data['you']['id']]['target'] = update_target(data, STATES[data['you']['id']])
+    else:
+        STATES[data['you']['id']] = {
+            'moves': 0,
+            'updated': time.time(),
+            'target': (1 , 1),
+            'next_point': (1, 1),
+            'nearest_food': (0,0),
+        }
 
-    sizeofboard = int(data['board']['width']) * int(data['board']['height'])
-    sizeofboard = float(sizeofboard)
+    
+    # Drop expired records (10s TTL)
+
+    for state in STATES.keys():
+        if time.time() - STATES[state]['updated'] > 10:
+            STATES.pop(state)
+
+    # Update the nearest food:
 
     y = int(data['you']['body'][0]['y'])
-    x = int(data['you']['body'][0]['x'])   
-
-    numberofsnakes = 0.0
-
-    for snake in data['board']['snakes']:
-        for segment in snake['body']:
-            numberofsnakes += 1.0
-
-    coverage = numberofsnakes / sizeofboard
-
-    THRESHOLD = int(data['board']['width']) + int(data['board']['height']) + 15 + int(55*coverage)
-
-    health = int(data['you']['health'])
-
+    x = int(data['you']['body'][0]['x']) 
+    
     food_locs = []
     for i in range(len(data['board']['food'])):
         food_locs.append([data['board']['food'][i]['x'], data['board']['food'][i]['y']])
@@ -89,26 +107,106 @@ def move():
 
     closest = min(food_distances)
 
-    # find head coordinates 
+    STATES[data['you']['id']]['nearest_food'] = (food_locs[food_distances.index(int(closest))][0], food_locs[food_distances.index(int(closest))][1])
 
-    if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungry
+    return  STATES[data['you']['id']]
 
-            target_x = int(data['you']['body'][-1]['x'])
-            target_y = int(data['you']['body'][-1]['y'])
-            taunt = "perfectly content"
+def update_target(data, state):
 
-    else:           # move to the closest available food (inefficient af but w/e)
+    global STATES
+    position = (int(data['you']['body'][0]['x']), int(data['you']['body'][0]['y']))
 
-        target_x = food_locs[food_distances.index(int(closest))][0]
-        target_y = food_locs[food_distances.index(int(closest))][1]
-        taunt = "...just gonna ssnake past ya there...."
+    # if it's time to eat, find the nearest food
+    if int(data['you']['health']) < 40:
+        return state['nearest_food']
+
+    # If we've reached a waypoint, go to the next one
+    elif (position == state['target'] == state['next_point']):
+        
+        targets = [
+            (1, 1),
+            (1, int(data['board']['height'])-2),
+            (int(data['board']['width'])-2, int(data['board']['height'])-2),
+            (int(data['board']['width'])-2, 1)
+        ]
+
+        current_index = targets.index(state['target'])
+        next_index = (current_index + 1) % 4
+        STATES[data['you']['id']]['next_point'] = targets[next_index]
+        return targets[next_index]
+
+    # Otherwise, just stay the course
+    return state['next_point']
+
+@bottle.post('/move')
+def move():
+
+    # MOVE function:
+    # Finds food and directs the snake there in an x-y search pattern
+    # validates move 3x to ensure that the snake isn't gonna hit anything
+
+    data = bottle.request.json
+    state = get_state(data)
+
+    # print state
+
+    # # DETERMINE WHETHER TO GO FOR FOOD OR STAY SAFE
+
+    # sizeofboard = int(data['board']['width']) * int(data['board']['height'])
+    # sizeofboard = float(sizeofboard)
+
+    # y = int(data['you']['body'][0]['y'])
+    # x = int(data['you']['body'][0]['x'])   
+
+    # numberofsnakes = 0.0
+
+    # for snake in data['board']['snakes']:
+    #     for segment in snake['body']:
+    #         numberofsnakes += 1.0
+
+    # coverage = numberofsnakes / sizeofboard
+
+    # THRESHOLD = int(data['board']['width']) + int(data['board']['height']) + 15 + int(55*coverage)
+
+    # health = int(data['you']['health'])
+
+    # food_locs = []
+    # for i in range(len(data['board']['food'])):
+    #     food_locs.append([data['board']['food'][i]['x'], data['board']['food'][i]['y']])
+
+    # food_distances = []
+    # for i in range(len(data['board']['food'])):
+    #     food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
+
+    # closest = min(food_distances)
+
+    # # find head coordinates 
+
+    # if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungry
+
+    #         target_x = int(data['you']['body'][-1]['x'])
+    #         target_y = int(data['you']['body'][-1]['y'])
+    #         taunt = "perfectly content"
+
+    # else:           # move to the closest available food (inefficient af but w/e)
+
+    #     target_x = food_locs[food_distances.index(int(closest))][0]
+    #     target_y = food_locs[food_distances.index(int(closest))][1]
+    #     taunt = "...just gonna ssnake past ya there...."
 
     # direction = astar_move(data, (x, y), (target_x, target_y))
+
+    print state
+
+    y = int(data['you']['body'][0]['y'])
+    x = int(data['you']['body'][0]['x'])  
+
+    target_x, target_y = state['target']
+
     direction = quick_move(data, (x, y), (target_x, target_y))
 
     return {
         'move': direction,
-        'taunt': taunt
     }
 
 

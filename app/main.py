@@ -22,6 +22,7 @@ from api import ping_response, start_response, move_response, end_response
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 STATES = {}
+MARGIN = 2
 
 @bottle.route('/')
 def index():
@@ -80,7 +81,7 @@ def get_state(data):
             'moves': 0,
             'updated': time.time(),
             'target': (1 , 1),
-            'next_point': (0, 0),
+            'next_point': (MARGIN, MARGIN),
             'nearest_food': (0,0),
         }
 
@@ -123,10 +124,10 @@ def update_target(data, state):
     elif (position == state['target'] == state['next_point']):
         
         targets = [
-            (0, 0),
-            (0, int(data['board']['height'])-1),
-            (int(data['board']['width'])-1, int(data['board']['height'])-1),
-            (int(data['board']['width'])-1, 0)
+            (MARGIN, MARGIN),
+            (MARGIN, int(data['board']['height'])-(1+MARGIN)),
+            (int(data['board']['width'])-(1+MARGIN), int(data['board']['height'])-(1+MARGIN)),
+            (int(data['board']['width'])-(1+MARGIN), MARGIN)
         ]
 
         current_index = targets.index(state['target'])
@@ -411,7 +412,7 @@ application = bottle.default_app()
 if __name__ == '__main__':
 
     # If runnign on the GCP instance, use port 80.
-    if os.getenv("GCP"):
+    if os.getenv("GCP") == "Y":
         server_port = '80'
     else:
         server_port = '8080'

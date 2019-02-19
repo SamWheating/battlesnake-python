@@ -26,10 +26,12 @@ MARGIN = 2
 
 @bottle.route('/')
 def index():
-    return '''
+    return bottle.static_file('landing.html', root='static/')
+    #return bottle.redirect('../http://www.samwheating.com')   
+"""     return '''
     Battlesnake documentation can be found at
        <a href="https://docs.battlesnake.io">https://docs.battlesnake.io</a>.
-    '''
+    ''' """
 
 @bottle.route('/static/<path:path>')
 def static(path):
@@ -414,6 +416,7 @@ if __name__ == '__main__':
     # If runnign on the GCP instance, use port 80.
     if os.getenv("GCP") == "Y":
         server_port = '80'
+        print "80"
     else:
         server_port = '8080'
 

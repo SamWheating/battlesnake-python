@@ -87,7 +87,12 @@ def get_state(data):
 
     global STATES
 
-    margin = 1 if int(data['board']['height']) <= 9 else 2
+    try:
+        margin = 1 if int(data['board']['height']) <= 9 else 2
+    except e:
+        print(e)
+        margin = 2
+
 
     # Defines the pattern to follow:
 
@@ -165,7 +170,6 @@ def update_target(data, state, waypoints):
         current_index = waypoints.index(state['target'])
         next_index = (current_index + 1) % len(waypoints)
         STATES[data['you']['id']]['next_point'] = waypoints[next_index]
-        print "next target: ", waypoints[next_index]
         return waypoints[next_index]
 
     # Otherwise, just stay the course

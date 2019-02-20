@@ -13,6 +13,7 @@ from api import ping_response, start_response, move_response, end_response
 # Stores the state like:
 #     {
 #         SnakeID : {
+#             moves: 123
 #             ObjectivePoint: (1, 1),
 #             Updated: 29821.2324
 #         }
@@ -22,7 +23,6 @@ from api import ping_response, start_response, move_response, end_response
 
 DIRECTIONS = {'right': [1,0], 'left':[-1,0], 'up':[0,-1], 'down':[0,1]}
 STATES = {}
-MARGIN = 2
 
 @bottle.route('/')
 def index():
@@ -67,6 +67,19 @@ def start():
 
     return start_response(color, head, tail)
 
+def closest_waypoint(data, waypoints): 
+
+    y = int(data['you']['body'][0]['y'])
+    x = int(data['you']['body'][0]['x'])
+
+    waypoint_distances = []
+    for i in range(len(waypoints)):
+        waypoint_distances.append(int(math.fabs(waypoints[i][0] - x) + math.fabs(waypoints[i][1] - y)))
+
+    closest = min(waypoint_distances)
+    
+    return (waypoints[waypoint_distances.index(int(closest))][0], waypoints[waypoint_distances.index(int(closest))][1])
+
 
 def get_state(data):
 
@@ -74,24 +87,47 @@ def get_state(data):
 
     global STATES
 
+    margin = 1 if int(data['board']['height']) <= 9 else 2
+
+    # Defines the pattern to follow:
+
+    # Square CCW
+    waypoints = [
+        (margin, margin),
+        (margin, int(data['board']['height'])-(1+margin)),
+        (int(data['board']['width'])-(1+margin), int(data['board']['height'])-(1+margin)),
+        (int(data['board']['width'])-(1+margin), margin)
+    ]
+
+    middle = (int(int(data['board']['width'])/2), int(int(data['board']['width'])/2))
+    other_middle = (middle[0]+1, middle[1])
+
+    # waypoints = [
+    #     (margin, margin), # Top left
+    #     (margin, int(data['board']['height'])-(1+margin)), # bottom left
+    #     middle,# middle
+    #     (int(data['board']['width'])-(1+margin), margin), #top right
+    #     (int(data['board']['width'])-(1+margin), int(data['board']['height'])-(1+margin)), # bottom right 
+    #     other_middle # middle
+    # ]
+
     if data['you']['id'] in STATES:
         STATES[data['you']['id']]['moves'] += 1
-        STATES[data['you']['id']]['target'] = update_target(data, STATES[data['you']['id']])
+        STATES[data['you']['id']]['target'] = update_target(data, STATES[data['you']['id']], waypoints)
         STATES[data['you']['id']]['updated'] = time.time()
     else:
         STATES[data['you']['id']] = {
             'moves': 0,
             'updated': time.time(),
             'target': (1 , 1),
-            'next_point': (MARGIN, MARGIN),
+            'next_point': closest_waypoint(data, waypoints),
             'nearest_food': (0,0),
         }
 
-    
     # Drop expired records (10s TTL)
 
     for state in STATES.keys():
-        if time.time() - STATES[state]['updated'] > 30:
+        if time.time() - STATES[state]['updated'] > 10:
             STATES.pop(state)
 
     # Update the nearest food:
@@ -113,7 +149,8 @@ def get_state(data):
 
     return  STATES[data['you']['id']]
 
-def update_target(data, state):
+
+def update_target(data, state, waypoints):
 
     global STATES
     position = (int(data['you']['body'][0]['x']), int(data['you']['body'][0]['y']))
@@ -124,18 +161,12 @@ def update_target(data, state):
 
     # If we've reached a waypoint, go to the next one
     elif (position == state['target'] == state['next_point']):
-        
-        targets = [
-            (MARGIN, MARGIN),
-            (MARGIN, int(data['board']['height'])-(1+MARGIN)),
-            (int(data['board']['width'])-(1+MARGIN), int(data['board']['height'])-(1+MARGIN)),
-            (int(data['board']['width'])-(1+MARGIN), MARGIN)
-        ]
-
-        current_index = targets.index(state['target'])
-        next_index = (current_index + 1) % 4
-        STATES[data['you']['id']]['next_point'] = targets[next_index]
-        return targets[next_index]
+    
+        current_index = waypoints.index(state['target'])
+        next_index = (current_index + 1) % len(waypoints)
+        STATES[data['you']['id']]['next_point'] = waypoints[next_index]
+        print "next target: ", waypoints[next_index]
+        return waypoints[next_index]
 
     # Otherwise, just stay the course
     return state['next_point']
@@ -151,56 +182,8 @@ def move():
     data = bottle.request.json
     state = get_state(data)
 
-    print STATES
-    print state
-
-    # print state
-
-    # # DETERMINE WHETHER TO GO FOR FOOD OR STAY SAFE
-
-    # sizeofboard = int(data['board']['width']) * int(data['board']['height'])
-    # sizeofboard = float(sizeofboard)
-
-    # y = int(data['you']['body'][0]['y'])
-    # x = int(data['you']['body'][0]['x'])   
-
-    # numberofsnakes = 0.0
-
-    # for snake in data['board']['snakes']:
-    #     for segment in snake['body']:
-    #         numberofsnakes += 1.0
-
-    # coverage = numberofsnakes / sizeofboard
-
-    # THRESHOLD = int(data['board']['width']) + int(data['board']['height']) + 15 + int(55*coverage)
-
-    # health = int(data['you']['health'])
-
-    # food_locs = []
-    # for i in range(len(data['board']['food'])):
-    #     food_locs.append([data['board']['food'][i]['x'], data['board']['food'][i]['y']])
-
-    # food_distances = []
-    # for i in range(len(data['board']['food'])):
-    #     food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
-
-    # closest = min(food_distances)
-
-    # # find head coordinates 
-
-    # if health > THRESHOLD and  closest > 1:                                     # ONLY chase food if actually hungry
-
-    #         target_x = int(data['you']['body'][-1]['x'])
-    #         target_y = int(data['you']['body'][-1]['y'])
-    #         taunt = "perfectly content"
-
-    # else:           # move to the closest available food (inefficient af but w/e)
-
-    #     target_x = food_locs[food_distances.index(int(closest))][0]
-    #     target_y = food_locs[food_distances.index(int(closest))][1]
-    #     taunt = "...just gonna ssnake past ya there...."
-
-    # direction = astar_move(data, (x, y), (target_x, target_y))
+    #print STATES
+    #print state
 
     y = int(data['you']['body'][0]['y'])
     x = int(data['you']['body'][0]['x'])  
@@ -413,16 +396,9 @@ application = bottle.default_app()
 
 if __name__ == '__main__':
 
-    # If runnign on the GCP instance, use port 80.
-    if os.getenv("GCP") == "Y":
-        server_port = '80'
-        print "80"
-    else:
-        server_port = '8080'
-
     bottle.run(
         application,
         host=os.getenv('IP', '0.0.0.0'),
-        port=os.getenv('PORT', server_port),
+        port=os.getenv('PORT', '8080'),
         debug=os.getenv('DEBUG', True)
     )

@@ -148,9 +148,12 @@ def get_state(data):
     for i in range(len(data['board']['food'])):
         food_distances.append(int(math.fabs(food_locs[i][0] - x) + math.fabs(food_locs[i][1] - y)))
 
-    closest = min(food_distances)
-
-    STATES[data['you']['id']]['nearest_food'] = (food_locs[food_distances.index(int(closest))][0], food_locs[food_distances.index(int(closest))][1])
+    # Prevent weird edge case when there is no food on the board
+    if len(food_distances) > 0:
+        closest = min(food_distances)
+        STATES[data['you']['id']]['nearest_food'] = (food_locs[food_distances.index(int(closest))][0], food_locs[food_distances.index(int(closest))][1])
+    else:
+        STATES[data['you']['id']]['nearest_food'] = (margin, margin)
 
     return  STATES[data['you']['id']]
 

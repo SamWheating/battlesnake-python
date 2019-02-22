@@ -61,7 +61,7 @@ def start():
             request's data if necessary.
     """
 
-    color = "#591275"
+    color = "#333333"
     head = "bendr"
     tail = "fat-rattle"
 
@@ -160,7 +160,7 @@ def get_state(data):
 
 def update_target(data, state, waypoints):
 
-    global STATES
+    global STATE
     position = (int(data['you']['body'][0]['x']), int(data['you']['body'][0]['y']))
 
     # if it's time to eat, find the nearest food
@@ -189,15 +189,13 @@ def move():
     data = bottle.request.json
     state = get_state(data)
 
-    #print STATES
-    #print state
-
     y = int(data['you']['body'][0]['y'])
     x = int(data['you']['body'][0]['x'])  
 
     target_x, target_y = state['target']
 
-    direction = quick_move(data, (x, y), (target_x, target_y))
+    direction = insightful_move(data, (x, y), (target_x, target_y))
+    # direction = quick_move(data, (x, y), (target_x, target_y))
 
     return {
         'move': direction,
@@ -212,66 +210,124 @@ def end():
     TODO: If your snake AI was stateful,
         clean up any stateful objects here.
     """
-    # print(json.dumps(data))
+    # dangerous(json.dumps(data))
 
     return end_response()
 
-def quick_move(data, location, target):
-    """ 
-    Quick move towards the target in an x-y pattern.
-    """
+def insightful_move(data, location, target):
+
+    directions = ['up', 'left', 'right', 'down']
+    dangerous = []
+    fatal = []
+
+    for direction in directions:
+        if is_fatal(data, direction): 
+            fatal.append(direction)
+
+    for direction in [i for i in directions if i not in fatal]:
+        if is_dangerous(data, direction):
+            dangerous.append(direction)
+
+    safe = [i for i in directions if (i not in fatal and i not in dangerous)]
 
     x = location[0]
     y = location[1]
     target_x = target[0]
     target_y = target[1]
 
-    directions = ['up', 'left', 'right', 'down']
+    if x < target_x and 'right' in safe:
+        return 'right'
 
-    if x < target_x:
-        direction = 'right'
+    elif x > target_x and 'left' in safe:
+        return 'left'
 
-    elif x > target_x:
-        direction = 'left'
+    elif y < target_y and 'down' in safe:
+        return 'down'
 
-    elif y < target_y:
-        direction = 'down'
+    elif y > target_y and 'up' in safe:
+        return 'up'
 
-    elif y > target_y:
-        direction = 'up'
+    elif len(fatal) == 4:
+        return random.choice(directions)
 
-    else: direction = random.choice(directions)
+    elif len(fatal) + len(dangerous) != 4:
+        return random.choice(safe)
 
-    first_move = direction
+    else:
+        return random.choice(dangerous)
 
-    if not validate_move(data, direction, 1, [x, y]):
-        directions.remove(direction)
+def off_board(x, y, data):
 
-    # if the initial move is invalid, try switching the search order:
+    if x not in range(int(data['board']['width'])):
+        return True
 
-        if y < target_y and direction != 'down':
-            direction = 'down'
+    if y not in range(int(data['board']['height'])):
+        return True
 
-        elif y > target_y and direction != 'up':
-            direction = 'up'
+    return False
 
-        elif x < target_x and direction != 'right':
-            direction = 'right'
+def is_fatal(data, direction):
+    
+    x = int(data['you']['body'][0]['x'])  
+    y = int(data['you']['body'][0]['y'])
+    position = (x, y)
 
-        elif x > target_x and direction != 'left':
-            direction = 'left'
+    future_pos = (future_x, future_y) = tuple(sum(q) for q in zip(position, DIRECTIONS[direction]))
 
-        else: direction = random.choice(directions)
+    if off_board(future_x, future_y, data):
+        return True
 
-    if not validate_move(data, direction, 2, [x, y]):
-        directions.remove(direction)
-        direction = random.choice(directions)
+    snakes = []
+    for snake in data['board']['snakes']:
+        for segment in snake['body'][:-1]:
+            if future_pos == (int(segment['x']), int(segment['y'])):
+                return True
 
-    if not validate_move(data, direction, 3, [x, y]):
-        directions.remove(direction)
-        direction = random.choice(directions)
+    return False
 
-    return direction
+
+def is_dangerous(data, direction):
+
+    x = int(data['you']['body'][0]['x'])  
+    y = int(data['you']['body'][0]['y'])
+    position = (x, y)
+    future_pos = (future_x, future_y) = tuple(sum(q) for q in zip(position, DIRECTIONS[direction]))
+
+    heads = []  # for avoiding head areas
+    snakes = []
+
+    for snake in data['board']['snakes'][:]:
+        if len(snake['body' ]) >= (len(data['you']['body']) - 1):
+            heads.append([int(snake['body'][0]['x']), int(snake['body'][0]['y'])])
+            for segment in snake['body'][:-1]:
+                snakes.append((int(segment['x']), int(segment['y'])))
+
+    try:
+        heads.remove([x,y])
+    except:
+        pass
+
+    spots_near_heads = []
+
+    for item in heads:
+        spots_near_heads += [(item[0]-1, item[1]), (item[0]+1, item[1]), (item[0], item[1]-1), (item[0], item[1]+1)]
+    
+    if future_pos in spots_near_heads:  
+        return True
+
+    # Check for 1x1 spaces:
+
+    surrounding_points = [(future_x+1, future_y), (future_x-1, future_y), (future_x, future_y+1), (future_x, future_y-1)]
+    count = 0
+
+    for item in surrounding_points:
+        if item in snakes: count += 1
+        if off_board(item[0], item[1], data): count += 1
+
+    if count == 4:
+        return True
+
+    return False
 
 def astar_move(data, location, target):
 
@@ -303,100 +359,6 @@ def astar_move(data, location, target):
     print path
 
     return 'down'
-
-def validate_move(data, direction, priority, position):
-
-    # VALIDATE MOVE:
-    # Check that the future position of the head isn't:
-    #   a) on the snake's tail.
-    #   b) outside the bounds of the game field.
-    #   c) in a 1x1 space.
-
-    # checking for hazards if snake is to make the chosen move.
-
-    # DON'T HIT WALL
-
-    x = position[0]
-    y = position[1]
-
-    if x == 0:
-        if direction == 'left':
-            #print("tried to run out left side")
-            return False
-
-    if y == 0:
-        if direction == 'up':
-            #print("tried to run out top side")
-            return False
-
-    if x == (int(data['board']['width'])-1):
-        if direction == 'right':
-            #print("tried to run out right side")
-            return False
-
-    if y == (int(data['board']['height'])-1):
-        if direction == 'down':
-            #print("tried to run out bottom side")
-            return False
-
-    # DON'T HIT YOUR OWN TAIL OR OTHER SNAKES
-
-    future_pos = [future_x, future_y] = [sum(q) for q in zip(position, DIRECTIONS[direction])]
-
-
-    tail = []   # this is the list of points to not enter
-    heads = []  # for avoiding head areas
-
-    # add all snakes to the list of points to not enter (including oneself)
-
-    for snake in data['board']['snakes']:
-        for segment in snake['body'][:-1]:
-            tail.append([int(segment['x']), int(segment['y'])])
-
-    
-    for snake in data['board']['snakes'][:]:
-        heads.append([int(snake['body'][0]['x']), int(snake['body'][0]['y'])])
-
-   # don't worry about your own head.
-    try:
-        heads.remove([x,y])
-    except:
-        pass    
-
-    # check that it isn't a 1x1 space:    
-
-    surrounding_points = [[future_x+1, future_y], [future_x-1, future_y], [future_x, future_y+1], [future_x, future_y-1]]
-
-    count = 0
-
-    for item in surrounding_points:
-        if item in tail: count += 1
-        elif item[0] < 0: count += 1
-        elif item[0] >  (int(data['board']['width'])-1): count += 1
-        elif item[1] < 0: count += 1
-        elif item[1] >  (int(data['board']['height'])-1): count += 1
-
-    if count == 4:              # if the space is confirmed to be a dead-end
-        return False
-
-    # DON'T MOVE WITHIN 1 SQUARE OF OPPONENTS HEADS
-    # This is brokend uhhh 
-
-    if priority < 3:
-        for item in heads:
-            tail += [[item[0]-1, item[1]], [item[0]+1, item[1]], [item[0], item[1]-1], [item[0], item[1]+1]]
-
-            # NOTES HERE:
-            # urgency added as a prioritization, as this is a high-risk but not certain-death move.
-            # i.e if all other examples are certain death, moving close to an opponents head is acceptable.
-
-    if future_pos in tail:
-        return False    
-
-
-    # if there's no obstacles in da wae:
-    return True
-
 
 # Expose WSGI app (so gunicorn can find it)
 application = bottle.default_app()

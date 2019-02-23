@@ -61,7 +61,8 @@ def start():
             request's data if necessary.
     """
 
-    color = "#efefef"
+    # color = "#efefef"
+    color = "#30db4c"
     head = "bendr"
     tail = "fat-rattle"
 

@@ -62,7 +62,7 @@ def start():
     """
 
     # color = "#efefef"
-    color = "#30db4c"
+    color = "#EE74F6"
     head = "bendr"
     tail = "fat-rattle"
 
